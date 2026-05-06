@@ -1,0 +1,252 @@
+### ================================================================
+### Data Reconciliation Service — HTTP Request Collection
+### Base URL: http://localhost:8080
+### ================================================================
+
+### ----------------------------------------------------------------
+### 1. Connection Management
+### ----------------------------------------------------------------
+
+### 1.1 Register GCP MongoDB connection
+POST http://localhost:8080/api/v1/connections
+Content-Type: application/json
+
+{
+  "name": "gcp-mongo-prod",
+  "dbType": "MONGODB",
+  "connectionString": "mongodb://gcp-host1:27017,gcp-host2:27017/?replicaSet=rs0",
+  "clusterLabel": "gcp",
+  "username": "admin",
+  "passwordEncrypted": "encrypted-password-placeholder",
+  "properties": {
+    "database": "orders_db",
+    "readPreference": "primaryPreferred"
+  },
+  "enabled": true
+}
+
+### 1.2 Register HIC MongoDB connection
+POST http://localhost:8080/api/v1/connections
+Content-Type: application/json
+
+{
+  "name": "hic-mongo-prod",
+  "dbType": "MONGODB",
+  "connectionString": "mongodb://hic-host1:27017,hic-host2:27017/?replicaSet=rs0",
+  "clusterLabel": "hic",
+  "username": "admin",
+  "passwordEncrypted": "encrypted-password-placeholder",
+  "properties": {
+    "database": "orders_db"
+  },
+  "enabled": true
+}
+
+### 1.3 Register PostgreSQL audit connection
+POST http://localhost:8080/api/v1/connections
+Content-Type: application/json
+
+{
+  "name": "audit-pg",
+  "dbType": "POSTGRESQL",
+  "connectionString": "jdbc:postgresql://postgres-host:5432/reconciliation",
+  "clusterLabel": "audit",
+  "username": "recon",
+  "passwordEncrypted": "encrypted-password-placeholder",
+  "enabled": true
+}
+
+### 1.4 List all connections
+GET http://localhost:8080/api/v1/connections
+
+### 1.5 Get connection by ID (replace {id} with actual UUID)
+GET http://localhost:8080/api/v1/connections/{{connection-id}}
+
+### 1.6 Update a connection
+PUT http://localhost:8080/api/v1/connections/{{connection-id}}
+Content-Type: application/json
+
+{
+  "name": "gcp-mongo-prod-updated",
+  "dbType": "MONGODB",
+  "connectionString": "mongodb://gcp-new-host:27017/?replicaSet=rs0",
+  "clusterLabel": "gcp",
+  "enabled": true
+}
+
+### 1.7 Delete a connection
+DELETE http://localhost:8080/api/v1/connections/{{connection-id}}
+
+### 1.8 Validation: empty name should return 400
+POST http://localhost:8080/api/v1/connections
+Content-Type: application/json
+
+{
+  "name": "",
+  "dbType": "MONGODB",
+  "connectionString": "mongodb://host",
+  "clusterLabel": "test"
+}
+
+
+### ----------------------------------------------------------------
+### 2. Sync Job Management
+### ----------------------------------------------------------------
+
+### 2.1 Create sync job (GCP → HIC) with collection mappings
+POST http://localhost:8080/api/v1/sync-jobs
+Content-Type: application/json
+
+{
+  "name": "orders-gcp-to-hic",
+  "sourceConnectionId": "{{gcp-connection-id}}",
+  "targetConnectionId": "{{hic-connection-id}}",
+  "parallelism": 4,
+  "checkpointIntervalMs": 10000,
+  "windowSizeMs": 30000,
+  "mappings": [
+    {
+      "sourceCollection": "orders",
+      "targetCollection": "orders",
+      "timestampField": "updatedAt",
+      "strategy": "LAST_WRITE_WINS",
+      "windowSizeMs": 30000
+    },
+    {
+      "sourceCollection": "customers",
+      "targetCollection": "customers",
+      "timestampField": "lastModified",
+      "strategy": "SOURCE_PRIORITY",
+      "strategyParams": {
+        "priorityCluster": "gcp"
+      },
+      "windowSizeMs": 60000
+    }
+  ]
+}
+
+### 2.2 Create reverse sync job (HIC → GCP)
+POST http://localhost:8080/api/v1/sync-jobs
+Content-Type: application/json
+
+{
+  "name": "orders-hic-to-gcp",
+  "sourceConnectionId": "{{hic-connection-id}}",
+  "targetConnectionId": "{{gcp-connection-id}}",
+  "parallelism": 4,
+  "checkpointIntervalMs": 10000,
+  "windowSizeMs": 30000,
+  "mappings": [
+    {
+      "sourceCollection": "orders",
+      "targetCollection": "orders",
+      "timestampField": "updatedAt",
+      "strategy": "LAST_WRITE_WINS",
+      "windowSizeMs": 30000
+    }
+  ]
+}
+
+### 2.3 List all sync jobs
+GET http://localhost:8080/api/v1/sync-jobs
+
+### 2.4 Get sync job by ID
+GET http://localhost:8080/api/v1/sync-jobs/{{job-id}}
+
+### 2.5 Update sync job
+PUT http://localhost:8080/api/v1/sync-jobs/{{job-id}}
+Content-Type: application/json
+
+{
+  "name": "orders-gcp-to-hic-v2",
+  "sourceConnectionId": "{{gcp-connection-id}}",
+  "targetConnectionId": "{{hic-connection-id}}",
+  "parallelism": 8,
+  "checkpointIntervalMs": 20000,
+  "windowSizeMs": 60000,
+  "mappings": [
+    {
+      "sourceCollection": "orders",
+      "targetCollection": "orders",
+      "timestampField": "updatedAt",
+      "strategy": "LAST_WRITE_WINS",
+      "windowSizeMs": 60000
+    }
+  ]
+}
+
+### 2.6 Deploy sync job
+POST http://localhost:8080/api/v1/sync-jobs/{{job-id}}/deploy
+
+### 2.7 Stop sync job
+POST http://localhost:8080/api/v1/sync-jobs/{{job-id}}/stop
+
+### 2.8 Restart sync job
+POST http://localhost:8080/api/v1/sync-jobs/{{job-id}}/restart
+
+### 2.9 Delete sync job (must be STOPPED first)
+DELETE http://localhost:8080/api/v1/sync-jobs/{{job-id}}
+
+### 2.10 Validation: missing source connection
+POST http://localhost:8080/api/v1/sync-jobs
+Content-Type: application/json
+
+{
+  "name": "bad-job",
+  "sourceConnectionId": "nonexistent-id",
+  "targetConnectionId": "{{hic-connection-id}}",
+  "parallelism": 1,
+  "checkpointIntervalMs": 10000,
+  "windowSizeMs": 30000,
+  "mappings": []
+}
+
+
+### ----------------------------------------------------------------
+### 3. Conflict Resolution
+### ----------------------------------------------------------------
+
+### 3.1 Query all conflicts
+GET http://localhost:8080/api/v1/conflicts?page=0&size=20
+
+### 3.2 Query conflicts by job ID
+GET http://localhost:8080/api/v1/conflicts?syncJobId={{job-id}}&page=0&size=20
+
+### 3.3 Query unresolved conflicts (manual review queue)
+GET http://localhost:8080/api/v1/conflicts?status=MANUAL_REQUIRED&page=0&size=10
+
+### 3.4 Query conflicts by collection
+GET http://localhost:8080/api/v1/conflicts?collectionName=orders&page=0&size=20
+
+### 3.5 Query conflicts by time range
+GET http://localhost:8080/api/v1/conflicts?from=2026-01-01T00:00:00Z&to=2026-12-31T23:59:59Z&page=0&size=20
+
+### 3.6 Get conflict detail
+GET http://localhost:8080/api/v1/conflicts/{{conflict-id}}
+
+### 3.7 Manually resolve a conflict
+POST http://localhost:8080/api/v1/conflicts/{{conflict-id}}/resolve
+Content-Type: application/json
+
+{
+  "conflictId": "{{conflict-id}}",
+  "resolvedVersion": {
+    "status": "shipped",
+    "resolvedBy": "admin"
+  },
+  "resolutionDetail": "Admin reviewed: picked GCP version"
+}
+
+
+### ----------------------------------------------------------------
+### 4. Health & Metrics
+### ----------------------------------------------------------------
+
+### 4.1 Health check
+GET http://localhost:8080/actuator/health
+
+### 4.2 Info
+GET http://localhost:8080/actuator/info
+
+### 4.3 Prometheus metrics
+GET http://localhost:8080/actuator/prometheus
