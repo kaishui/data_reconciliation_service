@@ -1,0 +1,55 @@
+spring:
+  application:
+    name: reconciliation-management
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/reconciliation
+    username: recon
+    password: ${DB_PASSWORD:recon123}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 300000
+      connection-timeout: 10000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  webflux:
+    base-path: /
+
+server:
+  port: 8080
+
+logging:
+  level:
+    com.recon: DEBUG
+    org.springframework.web: INFO
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+recon:
+  flink:
+    rest-url: ${FLINK_REST_URL:http://localhost:8081}
+    timeout-seconds: 30
+    jar-directory: ${FLINK_JAR_DIR:/opt/flink/jars}

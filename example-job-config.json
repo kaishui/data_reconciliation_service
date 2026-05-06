@@ -1,0 +1,43 @@
+{
+  "job_name": "orders-gcp-to-hic",
+  "sync_job_id": "550e8400-e29b-41d4-a716-446655440000",
+  "source_cluster_label": "gcp",
+  "remote_cluster_label": "hic",
+  "parallelism": 4,
+  "checkpoint_interval_ms": 10000,
+  "window_size_ms": 30000,
+  "source_config": {
+    "db_type": "MONGODB",
+    "connection_string": "mongodb://gcp-host1:27017,gcp-host2:27017/?replicaSet=rs0",
+    "database": "orders_db",
+    "cluster_label": "gcp"
+  },
+  "target_config": {
+    "db_type": "MONGODB",
+    "connection_string": "mongodb://hic-host1:27017,hic-host2:27017/?replicaSet=rs0",
+    "database": "orders_db",
+    "cluster_label": "hic"
+  },
+  "mappings": [
+    {
+      "source_collection": "orders",
+      "target_collection": "orders",
+      "timestamp_field": "updatedAt",
+      "strategy": "LAST_WRITE_WINS",
+      "window_size_ms": 30000
+    },
+    {
+      "source_collection": "customers",
+      "target_collection": "customers",
+      "timestamp_field": "lastModified",
+      "strategy": "SOURCE_PRIORITY",
+      "strategy_params": {
+        "priorityCluster": "gcp"
+      },
+      "window_size_ms": 60000
+    }
+  ],
+  "audit_db_url": "jdbc:postgresql://postgres-host:5432/reconciliation",
+  "audit_db_user": "recon",
+  "audit_db_password": "replace-with-secret"
+}
