@@ -35,7 +35,7 @@ public class MongoCdcSourceFactory implements CdcSourceFactory {
 
     private ChangeEvent parseFromDebeziumJson(String json) {
         try {
-            com.fasterxml.jackson.databind.ObjectMapper m = new com.fasterxml.jackson.databind.ObjectMapper();
+            tools.jackson.databind.ObjectMapper m = new tools.jackson.databind.ObjectMapper();
             @SuppressWarnings("unchecked") Map<String, Object> raw = m.readValue(json, Map.class);
             ChangeEvent.ChangeEventBuilder b = ChangeEvent.builder();
             b.documentKey(raw.get("_id") != null ? raw.get("_id").toString() : null);

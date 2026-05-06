@@ -61,7 +61,7 @@ class SyncJobRunnerTest {
 
         assertThat(configFile.toFile().exists()).isTrue();
 
-        var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        var mapper = new tools.jackson.databind.ObjectMapper();
         var config = mapper.readValue(configFile.toFile(), java.util.Map.class);
 
         assertThat(config.get("job_name")).isEqualTo("test-job");

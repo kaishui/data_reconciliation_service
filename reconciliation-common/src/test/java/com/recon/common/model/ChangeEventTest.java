@@ -1,6 +1,6 @@
 package com.recon.common.model;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.recon.common.enums.OperationType;
 import org.junit.jupiter.api.Test;
 

@@ -1,6 +1,7 @@
 package com.recon.management.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.recon.management.config.FlinkClientConfig;
 import com.recon.management.entity.CollectionMappingEntity;
 import com.recon.management.entity.DbConnectionEntity;
@@ -22,17 +23,17 @@ import java.util.Map;
  * Orchestrates Flink job lifecycle: deploy, stop, restart.
  *
  * Flow:
- *   deploy()  → 1. build job config JSON
- *               2. upload fat JAR to Flink cluster
- *               3. submit job with config
- *               4. persist flinkJobId
+ * deploy() → 1. build job config JSON
+ * 2. upload fat JAR to Flink cluster
+ * 3. submit job with config
+ * 4. persist flinkJobId
  *
- *   stop()    → 1. trigger savepoint
- *               2. cancel job
- *               3. persist savepoint path
+ * stop() → 1. trigger savepoint
+ * 2. cancel job
+ * 3. persist savepoint path
  *
- *   restart() → 1. reload config
- *               2. submit job from same JAR with savepointPath
+ * restart() → 1. reload config
+ * 2. submit job from same JAR with savepointPath
  */
 @Service
 public class FlinkDeployService {
@@ -46,14 +47,14 @@ public class FlinkDeployService {
     private final ObjectMapper objectMapper;
 
     public FlinkDeployService(SyncJobRepository syncJobRepository,
-                               DbConnectionRepository connectionRepository,
-                               FlinkRestClient flinkClient,
-                               FlinkClientConfig config) {
+            DbConnectionRepository connectionRepository,
+            FlinkRestClient flinkClient,
+            FlinkClientConfig config) {
         this.syncJobRepository = syncJobRepository;
         this.connectionRepository = connectionRepository;
         this.flinkClient = flinkClient;
         this.config = config;
-        this.objectMapper = new ObjectMapper();
+        this.objectMapper = JsonMapper.builder().build();
     }
 
     /**
@@ -83,12 +84,14 @@ public class FlinkDeployService {
 
             // 3. Upload JAR → Flink
             String jarId = flinkClient.uploadJar(jarFile).block();
-            if (jarId == null) throw new RuntimeException("JAR upload returned null");
+            if (jarId == null)
+                throw new RuntimeException("JAR upload returned null");
 
             // 4. Submit job
             String programArgs = "--config " + configFile.toAbsolutePath();
             String flinkJobId = flinkClient.runJob(jarId, programArgs, job.getParallelism(), null).block();
-            if (flinkJobId == null) throw new RuntimeException("Job submission returned null");
+            if (flinkJobId == null)
+                throw new RuntimeException("Job submission returned null");
 
             // 5. Persist
             job.setFlinkJobId(flinkJobId);
@@ -224,17 +227,17 @@ public class FlinkDeployService {
                 "db_type", source.getDbType().name(),
                 "connection_string", source.getConnectionString(),
                 "database", source.getProperties() != null
-                        ? source.getProperties().getOrDefault("database", "admin") : "admin",
-                "cluster_label", source.getClusterLabel()
-        ));
+                        ? source.getProperties().getOrDefault("database", "admin")
+                        : "admin",
+                "cluster_label", source.getClusterLabel()));
 
         config.put("target_config", Map.of(
                 "db_type", target.getDbType().name(),
                 "connection_string", target.getConnectionString(),
                 "database", target.getProperties() != null
-                        ? target.getProperties().getOrDefault("database", "admin") : "admin",
-                "cluster_label", target.getClusterLabel()
-        ));
+                        ? target.getProperties().getOrDefault("database", "admin")
+                        : "admin",
+                "cluster_label", target.getClusterLabel()));
 
         config.put("mappings", mappings);
         return config;
@@ -261,27 +264,30 @@ public class FlinkDeployService {
         // 1. Config-specified directory
         File dir = new File(config.getJarDirectory());
         if (dir.exists()) {
-            File[] jars = dir.listFiles((d, name) ->
-                    name.startsWith("reconciliation-flink-runner") && name.endsWith(".jar"));
-            if (jars != null && jars.length > 0) return jars[0];
+            File[] jars = dir
+                    .listFiles((d, name) -> name.startsWith("reconciliation-flink-runner") && name.endsWith(".jar"));
+            if (jars != null && jars.length > 0)
+                return jars[0];
         }
 
         // 2. Module target directory
         File targetDir = new File("../reconciliation-flink-runner/target");
         if (targetDir.exists()) {
-            File[] jars = targetDir.listFiles((d, name) ->
-                    name.startsWith("reconciliation-flink-runner") && name.endsWith(".jar")
-                    && !name.contains("original") && !name.contains("sources"));
-            if (jars != null && jars.length > 0) return jars[0];
+            File[] jars = targetDir
+                    .listFiles((d, name) -> name.startsWith("reconciliation-flink-runner") && name.endsWith(".jar")
+                            && !name.contains("original") && !name.contains("sources"));
+            if (jars != null && jars.length > 0)
+                return jars[0];
         }
 
         // 3. Maven local repo
         String home = System.getProperty("user.home");
         File m2Repo = new File(home, ".m2/repository/com/recon/reconciliation-flink-runner/1.0.0-SNAPSHOT");
         if (m2Repo.exists()) {
-            File[] jars = m2Repo.listFiles((d, name) ->
-                    name.endsWith(".jar") && !name.contains("sources") && !name.contains("javadoc"));
-            if (jars != null && jars.length > 0) return jars[0];
+            File[] jars = m2Repo.listFiles(
+                    (d, name) -> name.endsWith(".jar") && !name.contains("sources") && !name.contains("javadoc"));
+            if (jars != null && jars.length > 0)
+                return jars[0];
         }
 
         throw new RuntimeException(

@@ -65,14 +65,10 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Jackson -->
+        <!-- Jackson 3 -->
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
+            <groupId>tools.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jsr310</artifactId>
         </dependency>
 
         <!-- Hibernate core (explicit for JPA enum handling) -->
@@ -81,11 +77,11 @@
             <artifactId>hibernate-core</artifactId>
         </dependency>
 
-        <!-- Hypersistence Utils (JSONB support) -->
+        <!-- Hypersistence Utils (JSONB support for Hibernate 7.1+) -->
         <dependency>
             <groupId>io.hypersistence</groupId>
-            <artifactId>hypersistence-utils-hibernate-63</artifactId>
-            <version>3.9.0</version>
+            <artifactId>hypersistence-utils-hibernate-71</artifactId>
+            <version>${hypersistence.version}</version>
         </dependency>
 
         <!-- Lombok (non-optional for annotation processing) -->
@@ -98,6 +94,20 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Spring Boot WebFlux Test for @WebFluxTest annotation -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Reactor Test for WebFlux testing -->
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-test</artifactId>
             <scope>test</scope>
         </dependency>
 

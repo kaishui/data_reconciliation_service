@@ -25,19 +25,19 @@
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <spring-boot.version>3.4.6</spring-boot.version>
+        <spring-boot.version>4.1.0-RC1</spring-boot.version>
         <flink.version>1.19.1</flink.version>
         <flink-cdc.version>3.2.1</flink-cdc.version>
         <flink-mongo.version>1.2.0-1.19</flink-mongo.version>
-        <lombok.version>1.18.36</lombok.version>
-        <jackson.version>2.18.3</jackson.version>
-        <flyway.version>10.22.0</flyway.version>
+        <lombok.version>1.18.38</lombok.version>
+        <flyway.version>12.4.0</flyway.version>
         <postgresql.version>42.7.5</postgresql.version>
+        <hypersistence.version>3.11.0</hypersistence.version>
 
         <!-- Test -->
-        <cucumber.version>7.20.1</cucumber.version>
-        <assertj.version>3.26.3</assertj.version>
-        <testcontainers.version>1.20.4</testcontainers.version>
+        <cucumber.version>7.22.0</cucumber.version>
+        <assertj.version>3.27.3</assertj.version>
+        <testcontainers.version>1.21.0</testcontainers.version>
     </properties>
 
     <dependencyManagement>
@@ -165,22 +165,7 @@
                 <version>${lombok.version}</version>
             </dependency>
 
-            <!-- Jackson -->
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-databind</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-core</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.datatype</groupId>
-                <artifactId>jackson-datatype-jsr310</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
+            <!-- Jackson versions are managed by Spring Boot BOM -->
         </dependencies>
     </dependencyManagement>
 
@@ -194,6 +179,14 @@
             </snapshots>
         </repository>
         <repository>
+            <id>spring-release-candidates</id>
+            <name>Spring Release Candidates</name>
+            <url>https://repo.spring.io/rc</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
             <id>apache-snapshots</id>
             <name>Apache Snapshot Repository</name>
             <url>https://repository.apache.org/snapshots</url>
@@ -202,6 +195,25 @@
             </snapshots>
         </repository>
     </repositories>
+
+    <pluginRepositories>
+        <pluginRepository>
+            <id>spring-milestones</id>
+            <name>Spring Milestones</name>
+            <url>https://repo.spring.io/milestone</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </pluginRepository>
+        <pluginRepository>
+            <id>spring-release-candidates</id>
+            <name>Spring Release Candidates</name>
+            <url>https://repo.spring.io/rc</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </pluginRepository>
+    </pluginRepositories>
 
     <build>
         <pluginManagement>
@@ -219,9 +231,6 @@
                         <source>${java.version}</source>
                         <target>${java.version}</target>
                         <parameters>true</parameters>
-                        <compilerArgs>
-                            <arg>-proc:full</arg>
-                        </compilerArgs>
                         <annotationProcessorPaths>
                             <path>
                                 <groupId>org.projectlombok</groupId>

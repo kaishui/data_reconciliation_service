@@ -1,6 +1,6 @@
 package com.recon.engine.flink.serialization;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.recon.common.enums.OperationType;
 import com.recon.common.model.ChangeEvent;
 import org.junit.jupiter.api.DisplayName;

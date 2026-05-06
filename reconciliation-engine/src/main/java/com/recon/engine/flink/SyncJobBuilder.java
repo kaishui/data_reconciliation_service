@@ -1,7 +1,7 @@
 package com.recon.engine.flink;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import com.recon.common.enums.DbType;
 import com.recon.common.model.ChangeEvent;
 import com.recon.common.model.ConflictLogEntry;
@@ -142,7 +142,7 @@ public class SyncJobBuilder {
 
     private String toJson(Object obj) {
         try { return objectMapper.writeValueAsString(obj); }
-        catch (JsonProcessingException e) { return "{}"; }
+        catch (JacksonException e) { return "{}"; }
     }
 
     private Map<String, ConflictStrategy> buildStrategyRegistry(List<Map<String, Object>> mappings) {
