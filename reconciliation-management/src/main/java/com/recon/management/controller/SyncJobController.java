@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/sync-jobs")
@@ -23,44 +24,31 @@ public class SyncJobController {
     }
 
     @GetMapping
-    public List<SyncJobEntity> list() {
-        return syncJobService.listAll();
-    }
+    public List<SyncJobEntity> list() { return syncJobService.listAll(); }
 
     @GetMapping("/{id}")
-    public SyncJobEntity get(@PathVariable String id) {
-        return syncJobService.getById(id);
-    }
+    public SyncJobEntity get(@PathVariable String id) { return syncJobService.getById(id); }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public SyncJobEntity create(@Valid @RequestBody SyncJobRequest request) {
-        return syncJobService.create(request);
-    }
+    public SyncJobEntity create(@Valid @RequestBody SyncJobRequest req) { return syncJobService.create(req); }
 
     @PutMapping("/{id}")
-    public SyncJobEntity update(@PathVariable String id, @Valid @RequestBody SyncJobRequest request) {
-        return syncJobService.update(id, request);
-    }
+    public SyncJobEntity update(@PathVariable String id, @Valid @RequestBody SyncJobRequest req) { return syncJobService.update(id, req); }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable String id) {
-        syncJobService.delete(id);
-    }
+    public void delete(@PathVariable String id) { syncJobService.delete(id); }
 
     @PostMapping("/{id}/deploy")
-    public SyncJobEntity deploy(@PathVariable String id) {
-        return flinkDeployService.deploy(id);
-    }
+    public SyncJobEntity deploy(@PathVariable String id) { return flinkDeployService.deploy(id); }
 
     @PostMapping("/{id}/stop")
-    public SyncJobEntity stop(@PathVariable String id) {
-        return flinkDeployService.stop(id);
-    }
+    public SyncJobEntity stop(@PathVariable String id) { return flinkDeployService.stop(id); }
 
     @PostMapping("/{id}/restart")
-    public SyncJobEntity restart(@PathVariable String id) {
-        return flinkDeployService.restart(id);
-    }
+    public SyncJobEntity restart(@PathVariable String id) { return flinkDeployService.restart(id); }
+
+    @GetMapping("/{id}/status")
+    public Map<String, Object> status(@PathVariable String id) { return flinkDeployService.getRuntimeStatus(id); }
 }

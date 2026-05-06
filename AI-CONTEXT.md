@@ -71,6 +71,16 @@ mvn spring-boot:run -Dspring-boot.run.profiles=h2
 # Run individual module tests
 mvn test -pl reconciliation-common
 mvn test -pl reconciliation-engine
+
+# Build Flink fat JAR (for deployment)
+mvn clean package -pl reconciliation-flink-runner -am -DskipTests
+# Output: reconciliation-flink-runner/target/reconciliation-flink-runner-1.0.0-SNAPSHOT.jar
+# Main class: com.recon.runner.SyncJobRunner
+
+# Submit to local Flink cluster
+flink run -c com.recon.runner.SyncJobRunner \
+  reconciliation-flink-runner/target/reconciliation-flink-runner-1.0.0-SNAPSHOT.jar \
+  --config /path/to/job-config.json
 ```
 
 ---
@@ -183,6 +193,93 @@ Ensure JAVA_HOME points to JDK 21.
 Run mvn compile -pl <module> to isolate the error.
 Check POM for dependency scope (provided vs compile).
 Common issues: Lombok not generating code (use manual getters), Flink CDC group changed to org.apache.flink.
+```
+
+### Deploy Flink JAR
+```
+# 1. Build the fat JAR (shade plugin packages all deps into one JAR)
+mvn clean package -pl reconciliation-flink-runner -am -DskipTests
+
+# Output: reconciliation-flink-runner/target/reconciliation-flink-runner-1.0.0-SNAPSHOT.jar
+# Main class: com.recon.runner.SyncJobRunner
+
+# 2a. Submit to Flink cluster via CLI
+flink run \
+  -c com.recon.runner.SyncJobRunner \
+  -p 4 \
+  reconciliation-flink-runner-1.0.0-SNAPSHOT.jar \
+  --config /path/to/job-config.json
+
+# 2b. Submit to Flink cluster via REST API
+# Step 1: Upload JAR
+curl -X POST http://localhost:8081/jars/upload \
+  -H "Expect:" \
+  -F "jarfile=@reconciliation-flink-runner-1.0.0-SNAPSHOT.jar"
+# Returns: {"filename":"/tmp/flink-web-.../flink-web-upload/UUID.jar"}
+
+# Step 2: Run the uploaded JAR with job config
+curl -X POST http://localhost:8081/jars/<jar-id>/run \
+  -H "Content-Type: application/json" \
+  -d '{
+    "entryClass": "com.recon.runner.SyncJobRunner",
+    "parallelism": 4,
+    "programArgs": "--config /opt/flink/jars/job-config.json"
+  }'
+# Returns: {"jobid": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"}
+
+# 3. Manage running jobs via REST API
+# List jobs:    GET  http://localhost:8081/jobs
+# Job status:   GET  http://localhost:8081/jobs/<job-id>
+# Stop + savepoint: POST http://localhost:8081/jobs/<job-id>/stop  {"targetDirectory":"/savepoints/"}
+# Cancel job:   PATCH http://localhost:8081/jobs/<job-id>?mode=cancel
+
+# 4. Job config JSON format (passed to SyncJobRunner)
+# See SyncJobRunner.printUsage() for full schema:
+{
+  "job_name": "orders-gcp-to-hic",
+  "sync_job_id": "job-uuid",
+  "source_cluster_label": "gcp",
+  "remote_cluster_label": "hic",
+  "parallelism": 4,
+  "checkpoint_interval_ms": 10000,
+  "window_size_ms": 30000,
+  "source_config": {
+    "db_type": "MONGODB",
+    "connection_string": "mongodb://gcp-host:27017",
+    "database": "mydb",
+    "cluster_label": "gcp"
+  },
+  "target_config": {
+    "db_type": "MONGODB",
+    "connection_string": "mongodb://hic-host:27017",
+    "database": "mydb",
+    "cluster_label": "hic"
+  },
+  "mappings": [{
+    "source_collection": "orders",
+    "target_collection": "orders",
+    "timestamp_field": "updatedAt",
+    "strategy": "LAST_WRITE_WINS",
+    "window_size_ms": 30000
+  }],
+  "audit_db_url": "jdbc:postgresql://audit-host:5432/reconciliation",
+  "audit_db_user": "recon",
+  "audit_db_password": "secret"
+}
+
+# 5. Management API (Spring Boot) deployment endpoints
+# These currently update DB status only (FlinkDeployService is a stub)
+POST /api/v1/sync-jobs/{id}/deploy    → sets status=RUNNING
+POST /api/v1/sync-jobs/{id}/stop      → sets status=STOPPED
+POST /api/v1/sync-jobs/{id}/restart   → sets status=RUNNING
+
+# TODO: FlinkDeployService needs real Flink REST API integration
+# - Generate job-config.json from SyncJobEntity + DbConnectionEntity
+# - Upload fat JAR to FLINK_REST_URL/jars/upload
+# - Submit job via FLINK_REST_URL/jars/{id}/run
+# - Store returned flinkJobId in SyncJobEntity
+# - Stop: trigger savepoint then cancel
+# - Restart: resubmit from last savepoint
 ```
 
 ---
