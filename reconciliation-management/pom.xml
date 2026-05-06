@@ -68,18 +68,23 @@
             <artifactId>jackson-datatype-jsr310</artifactId>
         </dependency>
 
-        <!-- Hypersistence Utils (JSONB support for Hibernate 6.3+) -->
+        <!-- Hibernate core (explicit for JPA enum handling) -->
+        <dependency>
+            <groupId>org.hibernate.orm</groupId>
+            <artifactId>hibernate-core</artifactId>
+        </dependency>
+
+        <!-- Hypersistence Utils (JSONB support) -->
         <dependency>
             <groupId>io.hypersistence</groupId>
             <artifactId>hypersistence-utils-hibernate-63</artifactId>
             <version>3.9.0</version>
         </dependency>
 
-        <!-- Lombok -->
+        <!-- Lombok (non-optional for annotation processing) -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <optional>true</optional>
         </dependency>
 
         <!-- Test: JUnit 5 + Mockito (via spring-boot-starter-test) -->
