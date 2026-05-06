@@ -1,0 +1,26 @@
+# Maven
+target/
+*.jar
+!reconciliation-flink-runner/target/*.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local
+
+# Dependency reduced POM
+dependency-reduced-pom.xml
