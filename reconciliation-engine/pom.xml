@@ -36,7 +36,7 @@
 
         <!-- Flink CDC MongoDB -->
         <dependency>
-            <groupId>com.ververica</groupId>
+            <groupId>org.apache.flink</groupId>
             <artifactId>flink-connector-mongodb-cdc</artifactId>
             <scope>provided</scope>
         </dependency>
@@ -50,7 +50,7 @@
 
         <!-- Flink CDC PostgreSQL (future) -->
         <dependency>
-            <groupId>com.ververica</groupId>
+            <groupId>org.apache.flink</groupId>
             <artifactId>flink-connector-postgres-cdc</artifactId>
             <scope>provided</scope>
             <optional>true</optional>
